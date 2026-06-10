@@ -3,27 +3,25 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions, StatusBar, Scroll
 
 const { width: W, height: H } = Dimensions.get('window');
 const GROUND_Y = H - 220;
-const GRAVITY = 2.2;
-const JUMP_FORCE = -28;
+const GRAVITY = 1.5;
+const JUMP_FORCE = -26;
 const MAX_JUMPS = 2;
 const CHAR_X = W * 0.15;
 const CHAR_W = 50;
 const CHAR_H = 50;
 const LOOP_MS = 16;
-const SPEED_UP_EVERY = 20;
-const SPEED_INC = 0.5;
 const COIN_SIZE = 24;
 const MAGNET_RANGE = 130;
 
 const POWERUPS = [
-  { id:'shield',      emoji:'🛡️', color:'#00acc1', label:'Shield',     frames:1   },
-  { id:'magnet',      emoji:'🧲', color:'#e91e63', label:'Magnet',     frames:300 },
-  { id:'slowmo',      emoji:'⏰', color:'#7c4dff', label:'Slow Mo',    frames:200 },
-  { id:'jetpack',     emoji:'🚀', color:'#ff6d00', label:'Jetpack',    frames:220 },
-  { id:'doublescore', emoji:'⭐', color:'#ffd740', label:'2x Score',   frames:360 },
-  { id:'speedboost',  emoji:'⚡', color:'#69f0ae', label:'SpeedBoost', frames:180 },
-  { id:'extralife',   emoji:'❤️', color:'#f44336', label:'Extra Life', frames:1   },
-  { id:'invincible',  emoji:'🌟', color:'#ffeb3b', label:'Invincible', frames:240 },
+  { id:'shield',      emoji:'🛡️', color:'#00acc1', label:'Shield',     frames:1,   shopCoins:50  },
+  { id:'magnet',      emoji:'🧲', color:'#e91e63', label:'Magnet',     frames:300, shopCoins:75  },
+  { id:'slowmo',      emoji:'⏰', color:'#7c4dff', label:'Slow Mo',    frames:200, shopCoins:120 },
+  { id:'jetpack',     emoji:'🚀', color:'#ff6d00', label:'Jetpack',    frames:220, shopCoins:150 },
+  { id:'doublescore', emoji:'⭐', color:'#ffd740', label:'2x Score',   frames:360, shopCoins:100 },
+  { id:'speedboost',  emoji:'⚡', color:'#69f0ae', label:'SpeedBoost', frames:180, shopCoins:80  },
+  { id:'extralife',   emoji:'❤️', color:'#f44336', label:'Extra Life', frames:1,   shopCoins:60  },
+  { id:'invincible',  emoji:'🌟', color:'#ffeb3b', label:'Invincible', frames:240, shopCoins:100 },
 ];
 
 const CHARACTERS = [
@@ -63,15 +61,29 @@ const WORLDS = [
   { id:'day',    label:'🌤️ Day',    sky:'#87CEEB', ground:'#4caf50' },
   { id:'night',  label:'🌙 Night',  sky:'#0d0d2b', ground:'#1a237e' },
   { id:'desert', label:'🏜️ Desert', sky:'#ff8f00', ground:'#d84315' },
-  { id:'space',  label:'🚀 Space',  sky:'#000022', ground:'#1a237e' },
+  { id:'jungle', label:'🌲 Jungle', sky:'#1b5e20', ground:'#33691e' },
+  { id:'snow',   label:'❄️ Snow',   sky:'#e3f2fd', ground:'#90caf9' },
+  { id:'space',  label:'🌌 Space',  sky:'#000022', ground:'#1a237e' },
+];
+
+const DAILY_REWARDS = [
+  { day:1, reward:10,  type:'coins', label:'10 Coins'      },
+  { day:2, reward:20,  type:'coins', label:'20 Coins'      },
+  { day:3, reward:30,  type:'coins', label:'30 Coins'      },
+  { day:4, reward:50,  type:'coins', label:'50 Coins'      },
+  { day:5, reward:75,  type:'coins', label:'75 Coins'      },
+  { day:6, reward:100, type:'coins', label:'100 Coins'     },
+  { day:7, reward:0,   type:'skin',  label:'Rare Skin! 🎁' },
 ];
 
 const MISSIONS = [
-  { id:'m1', label:'🎯 Score 50',  check:(s,c,g)=>s>=50  },
-  { id:'m2', label:'🪙 100 Coins', check:(s,c,g)=>c>=100 },
-  { id:'m3', label:'🎮 5 Games',   check:(s,c,g)=>g>=5   },
-  { id:'m4', label:'🏃 Score 100', check:(s,c,g)=>s>=100 },
-  { id:'m5', label:'💰 200 Coins', check:(s,c,g)=>c>=200 },
+  { id:'m1', label:'🎯 Score 50',      check:(s,c,g,p)=>s>=50   },
+  { id:'m2', label:'🪙 100 Coins',     check:(s,c,g,p)=>c>=100  },
+  { id:'m3', label:'🎮 5 Games',       check:(s,c,g,p)=>g>=5    },
+  { id:'m4', label:'🏃 Score 100',     check:(s,c,g,p)=>s>=100  },
+  { id:'m5', label:'💰 200 Coins',     check:(s,c,g,p)=>c>=200  },
+  { id:'m6', label:'⚡ Use 3 Powerups',check:(s,c,g,p)=>p>=3    },
+  { id:'m7', label:'👹 Defeat Boss',   check:(s,c,g,p)=>s>=100  },
 ];
 
 const ACHIEVEMENTS = [
@@ -84,6 +96,16 @@ const ACHIEVEMENTS = [
   { id:'a7', label:'🎮 Addicted',   check:(s,c,g)=>g>=10  },
 ];
 
+const LEVELS = [
+  { level:1,  label:'🐣 Rookie',  xpNeeded:0    },
+  { level:5,  label:'🏃 Runner',  xpNeeded:500  },
+  { level:10, label:'🥷 Ninja',   xpNeeded:1000 },
+  { level:20, label:'⚡ Master',  xpNeeded:2000 },
+  { level:50, label:'👑 Legend',  xpNeeded:5000 },
+];
+
+const COMBO_LABELS = ['','GOOD!','AWESOME!','PERFECT!','LEGENDARY!','GODLIKE!'];
+
 export default function App() {
   const [screen, setScreen] = useState('menu');
   const [coins, setCoins] = useState(0);
@@ -94,8 +116,12 @@ export default function App() {
   const [activeChar, setActiveChar] = useState(0);
   const [unlockedAch, setUnlockedAch] = useState([]);
   const [doneMissions, setDoneMissions] = useState([]);
+  const [dailyDay, setDailyDay] = useState(0);
   const [dailyDone, setDailyDone] = useState(false);
   const [worldIdx, setWorldIdx] = useState(0);
+  const [soundOn, setSoundOn] = useState(true);
+  const [xp, setXp] = useState(0);
+  const [powerupsUsed, setPowerupsUsed] = useState(0);
   const [leaderboard, setLeaderboard] = useState([
     {name:'Ali',score:180},{name:'Sara',score:145},
     {name:'Ahmed',score:120},{name:'You',score:0},
@@ -103,7 +129,7 @@ export default function App() {
   const [uiScore, setUiScore] = useState(0);
   const [uiCoins, setUiCoins] = useState(0);
   const [uiJumps, setUiJumps] = useState(MAX_JUMPS);
-  const [uiSpeed, setUiSpeed] = useState(5);
+  const [uiSpeed, setUiSpeed] = useState(3);
   const [charY, setCharY] = useState(GROUND_Y);
   const [obsArr, setObsArr] = useState([]);
   const [flyArr, setFlyArr] = useState([]);
@@ -117,17 +143,23 @@ export default function App() {
   const [bossActive, setBossActive] = useState(false);
   const [bossX, setBossX] = useState(W);
   const [bossHp, setBossHp] = useState(3);
+  const [combo, setCombo] = useState(0);
+  const [comboLabel, setComboLabel] = useState('');
+  const [spinResult, setSpinResult] = useState('');
 
   const running=useRef(false), loop=useRef(null), playerY=useRef(GROUND_Y);
   const velY=useRef(0), jumpsLeft=useRef(MAX_JUMPS), scoreRef=useRef(0);
-  const speedRef=useRef(5), coinsRef=useRef(0), frameRef=useRef(0);
+  const speedRef=useRef(3), coinsRef=useRef(0), frameRef=useRef(0);
   const obsRef=useRef([]), flyRef=useRef([]), coinRef=useRef([]);
   const puRef=useRef([]), activePRef=useRef({});
   const particleId=useRef(0), objId=useRef(0);
   const shieldOn=useRef(false), extraLife=useRef(false), usedExtra=useRef(false);
   const bossRef=useRef(false), bossXRef=useRef(W), bossHpRef=useRef(3);
+  const comboRef=useRef(0), puUsedRef=useRef(0);
+  const lastJumpGround=useRef(true);
 
   const world=WORLDS[worldIdx], char=CHARACTERS[activeChar];
+  const currentLevel=LEVELS.filter(l=>xp>=l.xpNeeded).pop()||LEVELS[0];
 
   function hasPU(id){return (activePRef.current[id]||0)>0;}
 
@@ -137,7 +169,10 @@ export default function App() {
     if(id==='extralife'){extraLife.current=true;usedExtra.current=false;}
     activePRef.current={...activePRef.current,[id]:pu.frames};
     setActivePUs({...activePRef.current});
+    puUsedRef.current++;
+    setPowerupsUsed(p=>p+1);
     spawnParticles(CHAR_X+25,playerY.current,pu.color,12);
+    if(soundOn) Vibration.vibrate(50);
   }
 
   function tickPUs(){
@@ -160,23 +195,31 @@ export default function App() {
   }
 
   function doShake(){
-    setShake(true); Vibration.vibrate([0,80,40,120]);
+    setShake(true);
+    if(soundOn) Vibration.vibrate([0,80,40,120]);
     setTimeout(()=>setShake(false),350);
+  }
+
+  function showCombo(c){
+    const label=COMBO_LABELS[Math.min(c,COMBO_LABELS.length-1)];
+    if(label){setComboLabel(label);setTimeout(()=>setComboLabel(''),1000);}
   }
 
   function startGame(){
     playerY.current=GROUND_Y; velY.current=0; jumpsLeft.current=MAX_JUMPS;
-    scoreRef.current=0; speedRef.current=5; coinsRef.current=0; frameRef.current=0;
+    scoreRef.current=0; speedRef.current=3; coinsRef.current=0; frameRef.current=0;
     obsRef.current=[]; flyRef.current=[]; coinRef.current=[];
     puRef.current=[]; activePRef.current={};
     shieldOn.current=false; extraLife.current=false; usedExtra.current=false;
     bossRef.current=false; bossXRef.current=W; bossHpRef.current=3;
+    comboRef.current=0; puUsedRef.current=0; lastJumpGround.current=true;
     running.current=true;
     setCharY(GROUND_Y); setObsArr([]); setFlyArr([]);
     setCoinArr([]); setPuPickups([]); setParticles([]);
     setActivePUs({}); setUiScore(0); setUiCoins(0);
-    setUiJumps(MAX_JUMPS); setUiSpeed(5);
+    setUiJumps(MAX_JUMPS); setUiSpeed(3);
     setBossActive(false); setBossX(W); setBossHp(3);
+    setCombo(0); setComboLabel('');
     setGamesPlayed(g=>g+1); setScreen('game');
     clearInterval(loop.current);
     loop.current=setInterval(tick,LOOP_MS);
@@ -186,9 +229,18 @@ export default function App() {
     if(!running.current)return;
     if(hasPU('jetpack')){velY.current=-18;return;}
     if(jumpsLeft.current>0){
-      velY.current=JUMP_FORCE; jumpsLeft.current--;
+      velY.current=JUMP_FORCE;
+      const wasGround=lastJumpGround.current;
+      jumpsLeft.current--;
       setUiJumps(jumpsLeft.current);
+      if(!wasGround){
+        comboRef.current++;
+        setCombo(comboRef.current);
+        showCombo(comboRef.current);
+      }
+      lastJumpGround.current=false;
       spawnParticles(CHAR_X+25,playerY.current+CHAR_H,'#90caf9',5);
+      if(soundOn) Vibration.vibrate(30);
     }
   }
 
@@ -205,30 +257,34 @@ export default function App() {
       if(playerY.current>=GROUND_Y){
         playerY.current=GROUND_Y; velY.current=0;
         jumpsLeft.current=MAX_JUMPS; setUiJumps(MAX_JUMPS);
+        lastJumpGround.current=true; comboRef.current=0; setCombo(0);
       }
     }
     const sc2x=hasPU('doublescore')?2:1;
-    if(f%(boost?4:8)===0){
+    if(f%8===0){
       scoreRef.current+=sc2x; setUiScore(scoreRef.current);
-      if(scoreRef.current%SPEED_UP_EVERY===0){
-        speedRef.current=Math.min(speedRef.current+SPEED_INC,18);
-        setUiSpeed(parseFloat(speedRef.current.toFixed(1)));
-      }
-      if(scoreRef.current>0&&scoreRef.current%100===0&&!bossRef.current){
-        bossRef.current=true; bossXRef.current=W; bossHpRef.current=3;
-        setBossActive(true); setBossX(W); setBossHp(3);
+      const s=scoreRef.current;
+      const newSpeed = s<20?3:s<50?4:s<100?5:s<200?6:s<300?8:Math.min(3+s/40,18);
+      speedRef.current=newSpeed;
+      setUiSpeed(parseFloat(newSpeed.toFixed(1)));
+      if((s===100||s===250||s===500)&&!bossRef.current){
+        bossRef.current=true; bossXRef.current=W;
+        const hp=s===500?5:s===250?4:3;
+        bossHpRef.current=hp;
+        setBossActive(true); setBossX(W); setBossHp(hp);
       }
     }
-    const gap=Math.max(45,90-Math.floor(scoreRef.current/3));
-    if(f%gap===0&&!bossRef.current){
-      const count=Math.random()<0.25&&scoreRef.current>30?2:1;
+    const s=scoreRef.current;
+    const spawnRate=s<10?0:s<30?120:s<60?90:s<100?70:Math.max(45,90-Math.floor(s/3));
+    if(spawnRate>0&&f%spawnRate===0&&!bossRef.current){
+      const count=Math.random()<0.25&&s>50?2:1;
       for(let i=0;i<count;i++){
         const t=GROUND_OBS[Math.floor(Math.random()*GROUND_OBS.length)];
-        obsRef.current.push({...t,id:objId.current++,x:W+i*55});
+        obsRef.current.push({...t,id:objId.current++,x:W+i*60});
       }
     }
-    const flyGap=Math.max(80,160-Math.floor(scoreRef.current/3));
-    if(f%flyGap===40&&scoreRef.current>10&&!bossRef.current){
+    const flyRate=s<30?0:Math.max(80,160-Math.floor(s/3));
+    if(flyRate>0&&f%flyRate===40&&!bossRef.current){
       const fe=FLY_OBS[Math.floor(Math.random()*FLY_OBS.length)];
       flyRef.current.push({...fe,id:objId.current++,x:W});
     }
@@ -285,8 +341,10 @@ export default function App() {
       if(shieldOn.current){
         shieldOn.current=false; activePRef.current={...activePRef.current,shield:0};
         setActivePUs({...activePRef.current}); doShake();
+        spawnParticles(CHAR_X+25,playerY.current,'#00acc1',14);
       } else if(extraLife.current&&!usedExtra.current){
         usedExtra.current=true; extraLife.current=false; doShake();
+        spawnParticles(CHAR_X+25,playerY.current,'#f44336',14);
       } else { endGame(); return; }
     }
     setCharY(playerY.current); setObsArr([...obsRef.current]);
@@ -304,8 +362,9 @@ export default function App() {
     }
     setCoins(prev=>prev+c);
     const newTotal=totalCoins+c; setTotalCoins(newTotal);
+    setXp(prev=>prev+s);
     ACHIEVEMENTS.forEach(a=>{if(!unlockedAch.includes(a.id)&&a.check(s,newTotal,gamesPlayed))setUnlockedAch(prev=>[...prev,a.id]);});
-    MISSIONS.forEach(m=>{if(!doneMissions.includes(m.id)&&m.check(s,newTotal,gamesPlayed))setDoneMissions(prev=>[...prev,m.id]);});
+    MISSIONS.forEach(m=>{if(!doneMissions.includes(m.id)&&m.check(s,newTotal,gamesPlayed,puUsedRef.current))setDoneMissions(prev=>[...prev,m.id]);});
     setScreen('dead');
   }
 
@@ -323,14 +382,39 @@ export default function App() {
   }
 
   function claimDaily(){
-    const r=50+Math.floor(Math.random()*51);
-    setCoins(c=>c+r); setDailyDone(true);
-    Alert.alert('🎁 Daily Reward!',`You got ${r} coins!`);
+    const nextDay=(dailyDay%7)+1;
+    const reward=DAILY_REWARDS[nextDay-1];
+    if(reward.type==='coins'){setCoins(c=>c+reward.reward);}
+    else if(reward.type==='skin'){
+      const locked=CHARACTERS.filter(c=>!ownedChars.includes(c.id));
+      if(locked.length>0){
+        const skin=locked[Math.floor(Math.random()*locked.length)];
+        setOwnedChars(prev=>[...prev,skin.id]);
+        Alert.alert('🎁 Rare Skin!',`You unlocked ${skin.emoji} ${skin.label}!`);
+      }
+    }
+    setDailyDay(nextDay); setDailyDone(true);
+    Alert.alert('🎁 Day '+nextDay+' Reward!',reward.label+' claimed!');
     setScreen('menu');
   }
 
+  function doSpin(){
+    const rewards=['🪙 50 Coins','🪙 100 Coins','🪙 200 Coins','🛡️ Shield PU','🧲 Magnet PU','🌟 Invincible PU','🦕 Rare Skin!','🪙 30 Coins'];
+    const r=rewards[Math.floor(Math.random()*rewards.length)];
+    setSpinResult(r);
+    if(r.includes('Coins')){const amt=parseInt(r);setCoins(c=>c+(isNaN(amt)?50:amt));}
+    else if(r.includes('PU')){
+      const id=r.includes('Shield')?'shield':r.includes('Magnet')?'magnet':'invincible';
+      activatePU(id);
+    }
+    else if(r.includes('Skin')){
+      const locked=CHARACTERS.filter(c=>!ownedChars.includes(c.id));
+      if(locked.length>0){const skin=locked[Math.floor(Math.random()*locked.length)];setOwnedChars(prev=>[...prev,skin.id]);}
+    }
+  }
+
   async function shareScore(){
-    try{await Share.share({message:`🎮 I scored ${deadScore} in Jump Dash! #JumpDash`});}catch(e){}
+    try{await Share.share({message:`🎮 I scored ${deadScore} in Jump Dash! Beat me! #JumpDash`});}catch(e){}
   }
 
   function buyChar(i){
@@ -341,6 +425,14 @@ export default function App() {
     } else Alert.alert('🔒 Locked',`Need: 🪙${c.coins}${c.score>0?` + Score ${c.score}`:''}`);
   }
 
+  function buyPowerup(pu){
+    if(coins>=pu.shopCoins){
+      setCoins(prev=>prev-pu.shopCoins);
+      activatePU(pu.id);
+      Alert.alert('✅ Bought!',`${pu.emoji} ${pu.label} ready for next game!`);
+    } else Alert.alert('❌ Not enough coins',`Need 🪙${pu.shopCoins}`);
+  }
+
   const puList=Object.entries(activePUs).filter(([,t])=>t>0);
 
   if(screen==='menu')return(
@@ -348,6 +440,7 @@ export default function App() {
       <StatusBar hidden/>
       <Text style={S.menuTitle}>JUMP DASH</Text>
       <Text style={S.menuSub}>Double Jump • Power-Ups • Boss Fights!</Text>
+      <Text style={{color:'#ffd740',fontSize:13,marginBottom:4}}>{currentLevel.label} • XP: {xp}</Text>
       <View style={[S.charBox,{backgroundColor:char.bg}]}>
         <Text style={{fontSize:52}}>{char.emoji}</Text>
         <Text style={{color:'white',fontWeight:'700',marginTop:4}}>{char.label}</Text>
@@ -356,19 +449,27 @@ export default function App() {
         <Text style={S.btnTxt}>▶ PLAY NOW</Text>
       </TouchableOpacity>
       <View style={S.menuGrid}>
-        {[{icon:'🛒',label:'Shop',sc:'shop'},{icon:'🏆',label:'Scores',sc:'board'},{icon:'🎖️',label:'Achiev.',sc:'ach'},{icon:'🎯',label:'Missions',sc:'missions'},{icon:'🌍',label:'World',sc:'worlds'}].map(item=>(
+        {[
+          {icon:'🛒',label:'Shop',sc:'shop'},
+          {icon:'🏆',label:'Scores',sc:'board'},
+          {icon:'🎖️',label:'Achiev.',sc:'ach'},
+          {icon:'🎯',label:'Missions',sc:'missions'},
+          {icon:'🌍',label:'World',sc:'worlds'},
+          {icon:'🎰',label:'Spin',sc:'spin'},
+          {icon:'⚙️',label:'Settings',sc:'settings'},
+        ].map(item=>(
           <TouchableOpacity key={item.sc} style={S.menuCard} onPress={()=>setScreen(item.sc)}>
-            <Text style={{fontSize:26}}>{item.icon}</Text>
-            <Text style={{color:'white',fontSize:11,fontWeight:'700',marginTop:2}}>{item.label}</Text>
+            <Text style={{fontSize:24}}>{item.icon}</Text>
+            <Text style={{color:'white',fontSize:10,fontWeight:'700',marginTop:2}}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
       {!dailyDone&&(
         <TouchableOpacity style={[S.btn,{backgroundColor:'#f9a825',marginTop:6}]} onPress={()=>setScreen('daily')}>
-          <Text style={S.btnTxt}>🎁 Daily Reward!</Text>
+          <Text style={S.btnTxt}>🎁 Daily Reward! Day {(dailyDay%7)+1}</Text>
         </TouchableOpacity>
       )}
-      <Text style={{color:'white',marginTop:10,fontSize:13}}>🪙 {coins} • Best: {highScore} • Games: {gamesPlayed}</Text>
+      <Text style={{color:'white',marginTop:8,fontSize:12}}>🪙 {coins} • Best: {highScore} • Games: {gamesPlayed}</Text>
     </View>
   );
 
@@ -383,30 +484,36 @@ export default function App() {
         </View>
         <View style={{alignItems:'center'}}>
           <Text style={{fontSize:16}}>{Array.from({length:MAX_JUMPS}).map((_,i)=>i<uiJumps?'🟢':'⚫').join('')}</Text>
-          {bossActive&&<Text style={{color:'#f44336',fontWeight:'900',fontSize:12}}>👹 BOSS!</Text>}
+          {bossActive&&<Text style={{color:'#f44336',fontWeight:'900',fontSize:11}}>👹 BOSS!</Text>}
+          {combo>1&&<Text style={{color:'#ffd740',fontWeight:'900',fontSize:11}}>x{combo} COMBO!</Text>}
         </View>
         <View style={{alignItems:'flex-end'}}>
-          <Text style={{color:'#ffd740',fontWeight:'700'}}>🪙 {uiCoins}</Text>
+          <Text style={{color:'#ffd740',fontWeight:'700',fontSize:13}}>🪙 {uiCoins}</Text>
           <TouchableOpacity style={S.stopBtn} onPress={()=>{running.current=false;clearInterval(loop.current);setScreen('menu');}}>
-            <Text style={{color:'white',fontSize:12,fontWeight:'700'}}>■ Stop</Text>
+            <Text style={{color:'white',fontSize:11,fontWeight:'700'}}>■ Stop</Text>
           </TouchableOpacity>
         </View>
       </View>
+      {comboLabel!==''&&(
+        <View style={S.comboPopup}>
+          <Text style={S.comboTxt}>{comboLabel}</Text>
+        </View>
+      )}
       {puList.length>0&&(
         <View style={S.puBadges}>
           {puList.map(([id,t])=>{
             const def=POWERUPS.find(p=>p.id===id);
-            return def?(<View key={id} style={[S.puBadge,{borderColor:def.color}]}><Text style={{fontSize:13}}>{def.emoji}</Text><Text style={{color:def.color,fontSize:10}}>{t>60?`${Math.ceil(t/60)}s`:'!'}</Text></View>):null;
+            return def?(<View key={id} style={[S.puBadge,{borderColor:def.color}]}><Text style={{fontSize:12}}>{def.emoji}</Text><Text style={{color:def.color,fontSize:9}}>{t>60?`${Math.ceil(t/60)}s`:'!'}</Text></View>):null;
           })}
         </View>
       )}
-      {obsArr.map(o=>(<View key={o.id} style={[S.obs,{left:o.x,top:GROUND_Y,width:o.w,height:o.h,backgroundColor:o.color}]}><Text style={{fontSize:18,textAlign:'center'}}>{o.emoji}</Text></View>))}
-      {flyArr.map(e=>(<View key={e.id} style={[S.obs,{left:e.x,top:e.flyY,width:e.w,height:e.h,backgroundColor:e.color,borderRadius:8}]}><Text style={{fontSize:20,textAlign:'center'}}>{e.emoji}</Text></View>))}
+      {obsArr.map(o=>(<View key={o.id} style={[S.obs,{left:o.x,top:GROUND_Y,width:o.w,height:o.h,backgroundColor:o.color}]}><Text style={{fontSize:16,textAlign:'center'}}>{o.emoji}</Text></View>))}
+      {flyArr.map(e=>(<View key={e.id} style={[S.obs,{left:e.x,top:e.flyY,width:e.w,height:e.h,backgroundColor:e.color,borderRadius:8}]}><Text style={{fontSize:18,textAlign:'center'}}>{e.emoji}</Text></View>))}
       {coinArr.map(c=>(<Text key={c.id} style={[S.coin,{left:c.x,top:c.y}]}>🪙</Text>))}
-      {puPickups.map(p=>(<View key={p.id} style={[S.puPickup,{left:p.x,top:p.y,borderColor:p.color}]}><Text style={{fontSize:20}}>{p.emoji}</Text></View>))}
-      {bossActive&&(<View style={[S.boss,{left:bossX}]}><Text style={{fontSize:52}}>👹</Text><Text style={{color:'red',fontWeight:'900',fontSize:11}}>{'❤️'.repeat(bossHp)}</Text></View>)}
+      {puPickups.map(p=>(<View key={p.id} style={[S.puPickup,{left:p.x,top:p.y,borderColor:p.color}]}><Text style={{fontSize:18}}>{p.emoji}</Text></View>))}
+      {bossActive&&(<View style={[S.boss,{left:bossX}]}><Text style={{fontSize:48}}>👹</Text><Text style={{color:'red',fontWeight:'900',fontSize:10}}>{'❤️'.repeat(bossHp)}</Text></View>)}
       <View style={[S.char,{top:charY,left:CHAR_X,backgroundColor:char.color,shadowColor:hasPU('invincible')?'#ffeb3b':hasPU('shield')?'#00acc1':'#000',shadowRadius:(hasPU('invincible')||hasPU('shield'))?20:4,shadowOpacity:0.9}]}>
-        <Text style={{fontSize:28}}>{hasPU('jetpack')?'🚀':hasPU('invincible')?'🌟':char.emoji}</Text>
+        <Text style={{fontSize:26}}>{hasPU('jetpack')?'🚀':hasPU('invincible')?'🌟':char.emoji}</Text>
         {hasPU('shield')&&<Text style={S.charBadge}>🛡️</Text>}
       </View>
       {particles.map(p=>(<View key={p.id} style={{position:'absolute',left:p.x,top:p.y,width:p.size,height:p.size,borderRadius:p.size/2,backgroundColor:p.color,opacity:0.85}}/>))}
@@ -416,21 +523,22 @@ export default function App() {
   if(screen==='dead')return(
     <View style={S.overlay}>
       <StatusBar hidden/>
-      <Text style={{fontSize:60}}>💥</Text>
+      <Text style={{fontSize:56}}>💥</Text>
       <Text style={S.deadTitle}>Game Over!</Text>
       <View style={S.scoreCard}>
         <Text style={S.scoreRow}>🏆 Score: <Text style={{color:'#ffd740'}}>{deadScore}</Text></Text>
         <Text style={S.scoreRow}>🥇 Best: <Text style={{color:'#69f0ae'}}>{highScore}</Text></Text>
         <Text style={S.scoreRow}>🪙 Coins: <Text style={{color:'#ffd740'}}>{deadCoins}</Text></Text>
-        {deadScore>=highScore&&deadScore>0&&<Text style={{color:'#ffd740',textAlign:'center',marginTop:6,fontWeight:'700'}}>🎉 New Record!</Text>}
+        <Text style={S.scoreRow}>⚡ XP: <Text style={{color:'#90caf9'}}>+{deadScore}</Text></Text>
+        {deadScore>=highScore&&deadScore>0&&<Text style={{color:'#ffd740',textAlign:'center',marginTop:4,fontWeight:'700'}}>🎉 New Record!</Text>}
       </View>
       <TouchableOpacity style={[S.btn,{backgroundColor:'#5c6bc0'}]} onPress={startGame}><Text style={S.btnTxt}>🔄 Try Again</Text></TouchableOpacity>
-      <View style={{flexDirection:'row',gap:10,marginTop:8}}>
+      <View style={{flexDirection:'row',gap:8,marginTop:8}}>
         <TouchableOpacity style={[S.btnSm,{backgroundColor:'#e53935'}]} onPress={watchAdExtraLife}><Text style={S.btnTxt}>📺 Extra Life</Text></TouchableOpacity>
         <TouchableOpacity style={[S.btnSm,{backgroundColor:'#f9a825'}]} onPress={watchAdDoubleCoins}><Text style={S.btnTxt}>📺 2x Coins</Text></TouchableOpacity>
       </View>
-      <TouchableOpacity style={[S.btnSm,{backgroundColor:'#1565c0',marginTop:8}]} onPress={shareScore}><Text style={S.btnTxt}>📤 Share Score</Text></TouchableOpacity>
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:8}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>🏠 Menu</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btnSm,{backgroundColor:'#1565c0',marginTop:6}]} onPress={shareScore}><Text style={S.btnTxt}>📤 Share Score</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:6}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>🏠 Menu</Text></TouchableOpacity>
     </View>
   );
 
@@ -438,24 +546,38 @@ export default function App() {
     <View style={[S.bg,{backgroundColor:'#0d0d2b'}]}>
       <StatusBar hidden/>
       <Text style={S.pageTitle}>🛒 Shop</Text>
-      <Text style={{color:'#ffd740',textAlign:'center',marginBottom:8}}>🪙 {coins} • Best: {highScore}</Text>
-      <ScrollView style={{width:'100%',paddingHorizontal:16}} showsVerticalScrollIndicator={false}>
+      <Text style={{color:'#ffd740',textAlign:'center',marginBottom:4}}>🪙 {coins} • Best: {highScore}</Text>
+      <ScrollView style={{width:'100%',paddingHorizontal:14}} showsVerticalScrollIndicator={false}>
+        <Text style={{color:'white',fontWeight:'900',fontSize:15,marginVertical:8}}>⚡ Power-Ups</Text>
+        {POWERUPS.map(pu=>(
+          <TouchableOpacity key={pu.id} style={[S.shopItem,{borderColor:pu.color+'55'}]} onPress={()=>buyPowerup(pu)}>
+            <Text style={{fontSize:26,width:40,textAlign:'center'}}>{pu.emoji}</Text>
+            <View style={{flex:1,marginLeft:10}}>
+              <Text style={{color:'white',fontWeight:'700'}}>{pu.label}</Text>
+              <Text style={{color:'#90a4ae',fontSize:11}}>🪙 {pu.shopCoins} coins</Text>
+            </View>
+            <View style={[S.shopBtn,{backgroundColor:pu.color+'99'}]}>
+              <Text style={{color:'white',fontWeight:'700',fontSize:12}}>Buy</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+        <Text style={{color:'white',fontWeight:'900',fontSize:15,marginVertical:8}}>🎮 Characters</Text>
         {CHARACTERS.map((c,i)=>{
           const owned=ownedChars.includes(c.id),active=activeChar===i,canBuy=coins>=c.coins&&highScore>=c.score;
           return(<TouchableOpacity key={c.id} style={[S.shopItem,{borderColor:active?'#5c6bc0':'rgba(255,255,255,0.12)',opacity:owned||canBuy?1:0.5}]} onPress={()=>buyChar(i)}>
-            <View style={[S.shopEmoji,{backgroundColor:c.bg}]}><Text style={{fontSize:28}}>{c.emoji}</Text></View>
-            <View style={{flex:1,marginLeft:12}}>
-              <Text style={{color:'white',fontWeight:'700',fontSize:15}}>{c.label}</Text>
+            <View style={[S.shopEmoji,{backgroundColor:c.bg}]}><Text style={{fontSize:26}}>{c.emoji}</Text></View>
+            <View style={{flex:1,marginLeft:10}}>
+              <Text style={{color:'white',fontWeight:'700',fontSize:14}}>{c.label}</Text>
               <Text style={{color:'#90a4ae',fontSize:11}}>{owned?(active?'Active ✓':'Owned'):`🪙${c.coins}${c.score>0?` + Score ${c.score}`:''}`}</Text>
             </View>
             <View style={[S.shopBtn,{backgroundColor:active?'#388e3c':owned?'#1565c0':canBuy?'#7b1fa2':'#37474f'}]}>
-              <Text style={{color:'white',fontWeight:'700',fontSize:12}}>{active?'✓ On':owned?'Use':canBuy?'Buy':'🔒'}</Text>
+              <Text style={{color:'white',fontWeight:'700',fontSize:11}}>{active?'✓ On':owned?'Use':canBuy?'Buy':'🔒'}</Text>
             </View>
           </TouchableOpacity>);
         })}
         <View style={{height:20}}/>
       </ScrollView>
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',margin:12}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',margin:10}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
 
@@ -465,25 +587,25 @@ export default function App() {
       <Text style={S.pageTitle}>🏆 Leaderboard</Text>
       {leaderboard.map((e,i)=>(
         <View key={i} style={[S.lbRow,{borderColor:i===0?'#ffd740':'rgba(255,255,255,0.1)'}]}>
-          <Text style={{color:['#ffd740','#b0bec5','#ff8a65'][i]||'#546e7a',fontSize:22,width:34,fontWeight:'900'}}>{['🥇','🥈','🥉'][i]||(i+1)}</Text>
+          <Text style={{color:['#ffd740','#b0bec5','#ff8a65'][i]||'#546e7a',fontSize:20,width:30,fontWeight:'900'}}>{['🥇','🥈','🥉'][i]||(i+1)}</Text>
           <Text style={{color:e.name==='You'?'#90caf9':'white',flex:1,fontWeight:'700'}}>{e.name}{e.name==='You'?' (Me)':''}</Text>
-          <Text style={{color:i===0?'#ffd740':'white',fontWeight:'700',fontSize:18}}>{e.score}</Text>
+          <Text style={{color:i===0?'#ffd740':'white',fontWeight:'700',fontSize:16}}>{e.score}</Text>
         </View>
       ))}
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:16}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:14}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
 
   if(screen==='ach')return(
     <View style={[S.bg,{backgroundColor:'#0d0d2b',padding:20}]}>
       <StatusBar hidden/>
-      <Text style={S.pageTitle}>🎖 Achievements</Text>
-      <Text style={{color:'#90a4ae',textAlign:'center',marginBottom:14}}>{unlockedAch.length}/{ACHIEVEMENTS.length} unlocked</Text>
+      <Text style={S.pageTitle}>🎖️ Achievements</Text>
+      <Text style={{color:'#90a4ae',textAlign:'center',marginBottom:12}}>{unlockedAch.length}/{ACHIEVEMENTS.length} unlocked</Text>
       {ACHIEVEMENTS.map(a=>{
         const done=unlockedAch.includes(a.id);
-        return(<View key={a.id} style={[S.achItem,{borderColor:done?'#388e3c':'rgba(255,255,255,0.1)',opacity:done?1:0.5}]}><Text style={{fontSize:26}}>{done?'✅':'🔒'}</Text><Text style={{color:'white',fontWeight:'700',marginLeft:14}}>{a.label}</Text></View>);
+        return(<View key={a.id} style={[S.achItem,{borderColor:done?'#388e3c':'rgba(255,255,255,0.1)',opacity:done?1:0.5}]}><Text style={{fontSize:24}}>{done?'✅':'🔒'}</Text><Text style={{color:'white',fontWeight:'700',marginLeft:12,fontSize:14}}>{a.label}</Text></View>);
       })}
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:16}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:14}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
 
@@ -491,12 +613,12 @@ export default function App() {
     <View style={[S.bg,{backgroundColor:'#0d0d2b',padding:20}]}>
       <StatusBar hidden/>
       <Text style={S.pageTitle}>🎯 Missions</Text>
-      <Text style={{color:'#90a4ae',textAlign:'center',marginBottom:14}}>{doneMissions.length}/{MISSIONS.length} done</Text>
+      <Text style={{color:'#90a4ae',textAlign:'center',marginBottom:12}}>{doneMissions.length}/{MISSIONS.length} done</Text>
       {MISSIONS.map(m=>{
         const done=doneMissions.includes(m.id);
-        return(<View key={m.id} style={[S.achItem,{borderColor:done?'#f9a825':'rgba(255,255,255,0.1)',opacity:done?1:0.55}]}><Text style={{fontSize:26}}>{done?'✅':'🎯'}</Text><Text style={{color:'white',fontWeight:'700',marginLeft:14}}>{m.label}</Text></View>);
+        return(<View key={m.id} style={[S.achItem,{borderColor:done?'#f9a825':'rgba(255,255,255,0.1)',opacity:done?1:0.55}]}><Text style={{fontSize:24}}>{done?'✅':'🎯'}</Text><Text style={{color:'white',fontWeight:'700',marginLeft:12,fontSize:14}}>{m.label}</Text></View>);
       })}
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:16}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:14}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
 
@@ -506,22 +628,81 @@ export default function App() {
       <Text style={S.pageTitle}>🌍 Choose World</Text>
       {WORLDS.map((w,i)=>(
         <TouchableOpacity key={w.id} style={[S.lbRow,{borderColor:worldIdx===i?'#5c6bc0':'rgba(255,255,255,0.1)',backgroundColor:worldIdx===i?'rgba(92,107,192,0.2)':'transparent'}]} onPress={()=>{setWorldIdx(i);setScreen('menu');}}>
-          <Text style={{fontSize:28,marginRight:12}}>{w.label.split(' ')[0]}</Text>
-          <Text style={{color:'white',fontWeight:'700',flex:1,fontSize:16}}>{w.label}</Text>
-          {worldIdx===i&&<Text style={{color:'#5c6bc0',fontWeight:'900'}}>✓ Active</Text>}
+          <Text style={{fontSize:26,marginRight:10}}>{w.label.split(' ')[0]}</Text>
+          <Text style={{color:'white',fontWeight:'700',flex:1,fontSize:15}}>{w.label}</Text>
+          {worldIdx===i&&<Text style={{color:'#5c6bc0',fontWeight:'900'}}>✓</Text>}
         </TouchableOpacity>
       ))}
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:16}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:14}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+    </View>
+  );
+
+  if(screen==='spin')return(
+    <View style={S.overlay}>
+      <StatusBar hidden/>
+      <Text style={{fontSize:60}}>🎰</Text>
+      <Text style={S.deadTitle}>Lucky Spin!</Text>
+      <Text style={{color:'#90a4ae',textAlign:'center',marginBottom:10}}>Free spin every 24 hours!</Text>
+      {spinResult!==''&&(
+        <View style={S.scoreCard}>
+          <Text style={{color:'#ffd740',fontSize:22,fontWeight:'900',textAlign:'center'}}>🎉 {spinResult}</Text>
+        </View>
+      )}
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#7b1fa2'}]} onPress={doSpin}>
+        <Text style={S.btnTxt}>🎰 SPIN!</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:10}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
+    </View>
+  );
+
+  if(screen==='settings')return(
+    <View style={[S.bg,{backgroundColor:'#0d0d2b',padding:20}]}>
+      <StatusBar hidden/>
+      <Text style={S.pageTitle}>⚙️ Settings</Text>
+      <View style={[S.lbRow,{borderColor:'rgba(255,255,255,0.1)'}]}>
+        <Text style={{color:'white',fontWeight:'700',flex:1,fontSize:16}}>🔊 Sound</Text>
+        <TouchableOpacity style={[S.shopBtn,{backgroundColor:soundOn?'#388e3c':'#37474f'}]} onPress={()=>setSoundOn(s=>!s)}>
+          <Text style={{color:'white',fontWeight:'700'}}>{soundOn?'ON':'OFF'}</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={[S.lbRow,{borderColor:'rgba(255,255,255,0.1)',marginTop:10}]}>
+        <Text style={{color:'white',fontWeight:'700',flex:1,fontSize:16}}>📳 Vibration</Text>
+        <View style={[S.shopBtn,{backgroundColor:'#388e3c'}]}>
+          <Text style={{color:'white',fontWeight:'700'}}>ON</Text>
+        </View>
+      </View>
+      <View style={[S.scoreCard,{marginTop:16}]}>
+        <Text style={{color:'white',fontWeight:'700',fontSize:15,marginBottom:8}}>📊 Stats</Text>
+        <Text style={{color:'#90a4ae'}}>Games Played: {gamesPlayed}</Text>
+        <Text style={{color:'#90a4ae'}}>Total Coins: {totalCoins}</Text>
+        <Text style={{color:'#90a4ae'}}>Best Score: {highScore}</Text>
+        <Text style={{color:'#90a4ae'}}>Total XP: {xp}</Text>
+        <Text style={{color:'#90a4ae'}}>Level: {currentLevel.label}</Text>
+      </View>
+      <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:14}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
 
   if(screen==='daily')return(
     <View style={S.overlay}>
       <StatusBar hidden/>
-      <Text style={{fontSize:72}}>🎁</Text>
-      <Text style={S.deadTitle}>Daily Reward!</Text>
-      <View style={S.scoreCard}><Text style={{color:'white',fontSize:20,fontWeight:'900',textAlign:'center'}}>🪙 50-100 Coins</Text></View>
-      <TouchableOpacity style={[S.btn,{backgroundColor:'#f9a825'}]} onPress={claimDaily}><Text style={S.btnTxt}>🎁 Claim Now!</Text></TouchableOpacity>
+      <Text style={{fontSize:60}}>🎁</Text>
+      <Text style={S.deadTitle}>Daily Rewards!</Text>
+      <ScrollView style={{width:'100%',paddingHorizontal:20}} showsVerticalScrollIndicator={false}>
+        {DAILY_REWARDS.map((r,i)=>(
+          <View key={i} style={[S.lbRow,{borderColor:dailyDay===r.day?'#f9a825':'rgba(255,255,255,0.1)',backgroundColor:dailyDay===r.day?'rgba(249,168,37,0.1)':'transparent'}]}>
+            <Text style={{color:'white',fontWeight:'700',width:50}}>Day {r.day}</Text>
+            <Text style={{color:'#ffd740',flex:1,fontWeight:'700'}}>{r.label}</Text>
+            {dailyDay>=r.day&&<Text style={{color:'#388e3c'}}>✅</Text>}
+          </View>
+        ))}
+      </ScrollView>
+      {!dailyDone&&(
+        <TouchableOpacity style={[S.btn,{backgroundColor:'#f9a825',marginTop:10}]} onPress={claimDaily}>
+          <Text style={S.btnTxt}>🎁 Claim Day {(dailyDay%7)+1}!</Text>
+        </TouchableOpacity>
+      )}
+      {dailyDone&&<Text style={{color:'#90a4ae',marginTop:10}}>Come back tomorrow! 🌅</Text>}
       <TouchableOpacity style={[S.btn,{backgroundColor:'#37474f',marginTop:8}]} onPress={()=>setScreen('menu')}><Text style={S.btnTxt}>← Back</Text></TouchableOpacity>
     </View>
   );
@@ -531,35 +712,37 @@ export default function App() {
 
 const S=StyleSheet.create({
   bg:{flex:1,alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'},
-  overlay:{flex:1,backgroundColor:'rgba(0,0,0,0.85)',alignItems:'center',justifyContent:'center',gap:8},
+  overlay:{flex:1,backgroundColor:'rgba(0,0,0,0.88)',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:20},
   ground:{position:'absolute',bottom:140,left:0,right:0,height:5},
-  hud:{position:'absolute',top:0,left:0,right:0,flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:12,paddingTop:14,backgroundColor:'rgba(0,0,0,0.45)',zIndex:10},
-  hudScore:{color:'white',fontWeight:'900',fontSize:22},
-  hudSub:{color:'#90a4ae',fontSize:11},
-  puBadges:{position:'absolute',top:80,right:12,gap:5,zIndex:10},
-  puBadge:{flexDirection:'row',alignItems:'center',gap:3,borderWidth:1.5,borderRadius:12,paddingHorizontal:8,paddingVertical:3,backgroundColor:'rgba(0,0,0,0.6)'},
+  hud:{position:'absolute',top:0,left:0,right:0,flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:10,paddingTop:12,backgroundColor:'rgba(0,0,0,0.45)',zIndex:10},
+  hudScore:{color:'white',fontWeight:'900',fontSize:20},
+  hudSub:{color:'#90a4ae',fontSize:10},
+  comboPopup:{position:'absolute',top:H/3,left:0,right:0,alignItems:'center',zIndex:20},
+  comboTxt:{color:'#ffd740',fontSize:32,fontWeight:'900',textShadowColor:'#000',textShadowRadius:8},
+  puBadges:{position:'absolute',top:75,right:10,gap:4,zIndex:10},
+  puBadge:{flexDirection:'row',alignItems:'center',gap:2,borderWidth:1.5,borderRadius:10,paddingHorizontal:6,paddingVertical:2,backgroundColor:'rgba(0,0,0,0.6)'},
   char:{position:'absolute',width:CHAR_W,height:CHAR_H,alignItems:'center',justifyContent:'center',borderRadius:12,elevation:8},
-  charBadge:{position:'absolute',top:-12,right:-8,fontSize:13},
+  charBadge:{position:'absolute',top:-10,right:-6,fontSize:12},
   obs:{position:'absolute',alignItems:'center',justifyContent:'center',elevation:6},
-  coin:{position:'absolute',fontSize:20},
-  puPickup:{position:'absolute',width:36,height:36,borderRadius:18,borderWidth:2,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.5)'},
+  coin:{position:'absolute',fontSize:18},
+  puPickup:{position:'absolute',width:34,height:34,borderRadius:17,borderWidth:2,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(0,0,0,0.5)'},
   boss:{position:'absolute',top:GROUND_Y-90,width:70,height:90,alignItems:'center',justifyContent:'center'},
-  stopBtn:{backgroundColor:'rgba(211,47,47,0.85)',paddingHorizontal:10,paddingVertical:4,borderRadius:10,marginTop:4},
-  btn:{paddingVertical:14,paddingHorizontal:40,borderRadius:14,alignItems:'center',minWidth:210,elevation:6},
-  btnSm:{paddingVertical:11,paddingHorizontal:18,borderRadius:11,alignItems:'center',elevation:4},
-  btnTxt:{color:'white',fontWeight:'700',fontSize:15},
-  menuTitle:{color:'white',fontSize:38,fontWeight:'900',letterSpacing:2,marginBottom:4},
-  menuSub:{color:'rgba(255,255,255,0.7)',fontSize:13,marginBottom:16},
-  charBox:{borderRadius:20,padding:16,alignItems:'center',marginBottom:16,width:110},
-  menuGrid:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:10,marginVertical:10},
-  menuCard:{width:72,height:72,borderRadius:16,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,0.15)',elevation:4},
-  deadTitle:{color:'white',fontSize:30,fontWeight:'900'},
-  scoreCard:{backgroundColor:'rgba(255,255,255,0.1)',borderRadius:16,padding:20,width:'85%',marginVertical:10,gap:8},
-  scoreRow:{color:'white',fontSize:18,fontWeight:'700'},
-  pageTitle:{color:'white',fontSize:28,fontWeight:'900',textAlign:'center',marginBottom:10,marginTop:16},
-  shopItem:{flexDirection:'row',alignItems:'center',backgroundColor:'rgba(255,255,255,0.06)',borderWidth:2,borderRadius:14,padding:12,marginBottom:10},
-  shopEmoji:{width:52,height:52,borderRadius:12,alignItems:'center',justifyContent:'center'},
-  shopBtn:{paddingHorizontal:12,paddingVertical:8,borderRadius:10,minWidth:48,alignItems:'center'},
-  lbRow:{flexDirection:'row',alignItems:'center',borderWidth:2,borderRadius:12,padding:12,marginBottom:8,width:'100%',gap:10},
-  achItem:{flexDirection:'row',alignItems:'center',borderWidth:2,borderRadius:12,padding:14,marginBottom:8,width:'100%'},
+  stopBtn:{backgroundColor:'rgba(211,47,47,0.85)',paddingHorizontal:8,paddingVertical:3,borderRadius:8,marginTop:3},
+  btn:{paddingVertical:13,paddingHorizontal:36,borderRadius:13,alignItems:'center',minWidth:200,elevation:6},
+  btnSm:{paddingVertical:10,paddingHorizontal:16,borderRadius:10,alignItems:'center',elevation:4},
+  btnTxt:{color:'white',fontWeight:'700',fontSize:14},
+  menuTitle:{color:'white',fontSize:36,fontWeight:'900',letterSpacing:2,marginBottom:2},
+  menuSub:{color:'rgba(255,255,255,0.7)',fontSize:12,marginBottom:6},
+  charBox:{borderRadius:18,padding:14,alignItems:'center',marginBottom:12,width:100},
+  menuGrid:{flexDirection:'row',flexWrap:'wrap',justifyContent:'center',gap:8,marginVertical:8},
+  menuCard:{width:68,height:68,borderRadius:14,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,0.15)',elevation:4},
+  deadTitle:{color:'white',fontSize:28,fontWeight:'900'},
+  scoreCard:{backgroundColor:'rgba(255,255,255,0.1)',borderRadius:14,padding:16,width:'85%',marginVertical:8,gap:6},
+  scoreRow:{color:'white',fontSize:16,fontWeight:'700'},
+  pageTitle:{color:'white',fontSize:26,fontWeight:'900',textAlign:'center',marginBottom:8,marginTop:14},
+  shopItem:{flexDirection:'row',alignItems:'center',backgroundColor:'rgba(255,255,255,0.06)',borderWidth:2,borderRadius:12,padding:10,marginBottom:8},
+  shopEmoji:{width:48,height:48,borderRadius:10,alignItems:'center',justifyContent:'center'},
+  shopBtn:{paddingHorizontal:10,paddingVertical:7,borderRadius:8,minWidth:44,alignItems:'center'},
+  lbRow:{flexDirection:'row',alignItems:'center',borderWidth:2,borderRadius:10,padding:10,marginBottom:6,width:'100%',gap:8},
+  achItem:{flexDirection:'row',alignItems:'center',borderWidth:2,borderRadius:10,padding:12,marginBottom:6,width:'100%'},
 });
